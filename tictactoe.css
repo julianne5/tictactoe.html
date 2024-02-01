@@ -5,7 +5,7 @@
 }
 
 body {
-    background-color: #12181B;
+    background-image: linear-gradient(45deg, #7b2323, #030202);
     display: flex;
     justify-content: center;
     align-items: center;
@@ -13,14 +13,19 @@ body {
 }
 
 .background {
+    -: linear-gradient(45deg,
+    black, transparent);
     padding-top: 1px;
 }
 
-.title {
-    color: white;
-    text-align: center;
-    font-size: 40px;
-    margin-top: 10px;
+.tile {
+    background-color: white;
+    display: flex;
+    justify-content: center;
+    align-items: center;
+    font-size: 30px;
+    cursor: pointer;
+    border: 1px solid black;
 }
 
 .display {
