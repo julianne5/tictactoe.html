@@ -1,0 +1,340 @@
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta http-equiv="X-UA-Compatible" content="IE=edge">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <link rel="stylesheet" href="tictactoe.css">
+    <title>Tic-Tac-Toe</title>
+</head>
+<body>
+    <main class="background">
+        <section class="title">
+            <h1>Tic Tac Toe</h1>
+        </section>
+        <section class="display">
+            <div>
+                Category: 
+                <select id="category">
+                    <option value="easy">Easy</option>
+                    <option value="hard">Hard</option>
+                    <option value="expert">Expert</option>
+                </select>
+            </div>
+            <div>
+                Players: 
+                <select id="players">
+                    <option value="ai">AI vs Human</option>
+                    <option value="human">Human vs Human</option>
+                </select>
+            </div>
+            <div>Points to Win: 5</div>
+            <div style="
+                margin-top: 15px;
+                font-weight: bold;
+                font-style: italic;
+            ">Score:</div>
+            
+            <div id="score"></div>
+        </section>
+        <section class="container">
+            <!-- Updated to a 5x6 board -->
+                <div class="tile"></div>
+                <div class="tile"></div>
+                <div class="tile"></div>
+                <div class="tile"></div>
+                <div class="tile"></div>
+                <div class="tile"></div>
+                <div class="tile"></div>
+                <div class="tile"></div>
+                <div class="tile"></div>
+                <div class="tile"></div>
+                <div class="tile"></div>
+                <div class="tile"></div>
+                <div class="tile"></div>
+                <div class="tile"></div>
+                <div class="tile"></div>
+                <div class="tile"></div>
+                <div class="tile"></div>
+                <div class="tile"></div>
+                <div class="tile"></div>
+                <div class="tile"></div>
+                <div class="tile"></div>
+                <div class="tile"></div>
+                <div class="tile"></div>
+                <div class="tile"></div>
+                <div class="tile"></div>
+                <div class="tile"></div>
+                <div class="tile"></div>
+                <div class="tile"></div>
+                <div class="tile"></div>
+                <div class="tile"></div>
+        </section>
+        <section class="display announcer hide"></section>
+        <section class="controls">
+            <button id="reset">Reset</button>
+        </section>
+    </main>
+    <script>
+        window.addEventListener('DOMContentLoaded', () => {
+            const tiles = Array.from(document.querySelectorAll('.tile'));
+            const resetButton = document.querySelector('#reset');
+            const announcer = document.querySelector('.announcer');
+            const scoreDisplay = document.getElementById('score');
+            const categorySelect = document.getElementById('category');
+            const playersSelect = document.getElementById('players');
+
+            let board = Array(5 * 6).fill('');
+            let currentPlayer = 'X';
+            let isGameActive = true;
+            let score = { X: 0, O: 0 };
+
+            const POINTS_TO_WIN = 5;
+
+            const winningConditions = [
+                //horizontal
+                [0, 1, 2, 3, 4, 5],
+                [6, 7, 8, 9, 10, 11],
+                [12, 13, 14, 15, 16, 17],
+                [18, 19, 20, 21, 22, 23],
+                [24, 25, 26, 27, 28, 29],
+                //vertical
+                [0, 6, 12, 18, 24],
+                [1, 7, 13, 19, 25],
+                [2, 8, 14, 20, 26],
+                [3, 9, 15, 21, 27],
+                [4, 10, 16, 22, 28],
+                [5, 11, 17, 23, 29]
+
+            ];
+
+            const PLAYERX_WON = 'PLAYERX_WON';
+            const PLAYERO_WON = 'PLAYERO_WON';
+            const TIE = 'TIE';
+
+            const announce = (type) => {
+                switch (type) {
+                    case PLAYERX_WON:
+                        announcer.innerHTML = 'Player <span class="playerO">O</span> Won';
+                        break;
+                    case PLAYERO_WON:
+                        announcer.innerHTML = 'Player <span class="playerX">X</span> Won';
+                        break;
+                    case TIE:
+                        announcer.innerText = 'Tie';
+                }
+                announcer.classList.remove('hide');
+            };
+
+            const updateScore = () => {
+    if (score[currentPlayer] === POINTS_TO_WIN) {
+        setTimeout(() => {
+            const winner = currentPlayer === 'X' ? 'O' : 'X';
+            const resetConfirmed = confirm(`Player ${winner} has won the game! Do you want to reset the game and scores?`);
+            if (resetConfirmed) {
+                resetGame();
+            } else {
+                resetBoard();
+            }
+        }, 100);
+    } else {
+        announce(currentPlayer === 'X' ? PLAYERO_WON : PLAYERX_WON);
+        isGameActive = false;
+    }
+};
+
+
+            const handleResultValidation = () => {
+                let roundWon = false;
+                let winningCells = [];
+
+                for (let i = 0; i < winningConditions.length; i++) {
+                    const winCondition = winningConditions[i];
+                    const cells = winCondition.map(index => board[index]);
+                    if (cells.every(cell => cell === 'X') || cells.every(cell => cell === 'O')) {
+                        roundWon = true;
+                        break;
+                    }
+                }
+
+                if (!roundWon) {
+                    // Check for diagonal victory
+                    if (checkDiagonalVictory()) {
+                        roundWon = true;
+                    }
+                }
+
+                if (roundWon) {
+                    score[currentPlayer]++;
+                    scoreDisplay.innerText = `X: ${score.X} / O: ${score.O}`;
+                    updateScore();
+                    announce(currentPlayer === 'X' ? PLAYERO_WON : PLAYERX_WON);
+                    isGameActive = false;
+                    return;
+                }
+
+                if (!board.includes('') && !roundWon)
+                    announce(TIE);
+            };
+
+            const checkDiagonalVictory = () => {
+                const diagonals = [
+                // top-left to bottom-right
+                    [0, 7, 14, 21, 28],
+                    [1, 8, 15, 22, 29],
+                    [2, 9, 16, 23],
+                    [3, 10, 17],
+                    [4, 11],
+                    [18, 25],
+                    [12, 19, 26],
+                    [6, 13, 20, 27],
+                    
+
+                // top-right to bottom-left
+                    [1,6],
+                    [2, 7, 12],
+                    [3,  8, 13, 18],
+                    [4, 9, 14, 19, 24],
+                    [5, 10, 15, 20, 25],
+                    [11, 16, 21, 26],
+                    [17, 22, 27],
+                    [23, 28]
+
+                ];
+
+                for (const diagonal of diagonals) {
+                    const cells = diagonal.map(index => board[index]);
+                    if (cells.every(cell => cell === 'X') || cells.every(cell => cell === 'O')) {
+                        return true;
+                    }
+                }
+
+                return false;
+            };
+
+            const isValidAction = (tile) => {
+                if (tile.innerText === 'X' || tile.innerText === 'O') {
+                    return false;
+                }
+
+                return true;
+            };
+
+            const updateBoard = (index) => {
+                board[index] = currentPlayer;
+                handleResultValidation();
+            };
+
+            const changePlayer = () => {
+                currentPlayer = currentPlayer === 'X' ? 'O' : 'X';
+            };
+
+            const userAction = (tile, index) => {
+                if (isValidAction(tile) && isGameActive) {
+                    tile.innerText = currentPlayer;
+                    tile.classList.add(`player${currentPlayer}`);
+                    updateBoard(index);
+                    changePlayer();
+                }
+            };
+
+            const resetGame = () => {
+                resetBoard();
+                score = { X: 0, O: 0 };
+                scoreDisplay.innerText = 'X: 0 / O: 0';
+                isGameActive = true;
+            
+                if (score.X === POINTS_TO_WIN || score.O === POINTS_TO_WIN) {
+                    score = { X: 0, O: 0 };
+                    scoreDisplay.innerText = `X: ${score.X} / O: ${score.O}`;
+                    resetBoard();
+                }
+            };
+
+            playersSelect.addEventListener('change', () => {
+            if (playersSelect.value === 'human' || playersSelect.value === 'ai') {
+                resetGame();
+            }
+        });
+
+        categorySelect.addEventListener('change', () => {
+    resetGame();
+            
+});
+            const resetBoard = () => {
+                board = Array(5 * 6).fill('');
+                isGameActive = true;
+                announcer.classList.add('hide');
+
+                tiles.forEach(tile => {
+                    tile.innerText = '';
+                    tile.classList.remove('playerX');
+                    tile.classList.remove('playerO');
+                });
+
+                currentPlayer = 'X';
+            };
+
+            tiles.forEach((tile, index) => {
+                tile.addEventListener('click', () => userAction(tile, index));
+            });
+
+            resetButton.addEventListener('click', resetBoard);
+
+            // AI functionality
+            const aiPlayer = () => {
+                if (isGameActive && playersSelect.value === 'ai' && currentPlayer === 'O') {
+                    const emptyTiles = tiles.filter(tile => tile.innerText === '');
+                    const winningMove = findWinningMove(emptyTiles);
+
+                    if (winningMove) {
+                        // If there is a winning move, make that move
+                        userAction(winningMove.tile, tiles.indexOf(winningMove.tile));
+                    } else {
+                        // Otherwise, choose a random empty tile based on difficulty level
+                        const randomIndex = Math.floor(Math.random() * emptyTiles.length);
+                        const selectedTile = emptyTiles[randomIndex];
+
+                        if (selectedTile) {
+                            userAction(selectedTile, tiles.indexOf(selectedTile));
+                        }
+                    }
+                }
+            };
+
+            const findWinningMove = (emptyTiles) => {
+                // Check each empty tile for a winning move
+                for (const tile of emptyTiles) {
+                    const index = tiles.indexOf(tile);
+                    const originalContent = tile.innerText;
+
+                    // Simulate making a move on this tile
+                    tile.innerText = currentPlayer;
+                    const isWinningMove = checkForWin(index);
+                    
+                    // Restore the original content
+                    tile.innerText = originalContent;
+
+                    if (isWinningMove) {
+                        return { tile, index };
+                    }
+                }
+
+                // If no winning move is found, return null
+                return null;
+            };
+
+            const checkForWin = (index) => {
+                // Check if the move at the given index results in a win
+                const currentBoard = [...board];
+                currentBoard[index] = currentPlayer;
+
+                // Check for horizontal, vertical, and diagonal wins
+                return winningConditions.some(condition =>
+                    condition.every(cell => currentBoard[cell] === currentPlayer)
+                );
+            };
+    setInterval(aiPlayer, 10);
+});
+    </script>
+</body>
+</html>
