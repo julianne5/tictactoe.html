@@ -301,42 +301,117 @@
             resetButton.addEventListener('click', resetBoard);
 
             // AI functionality
-           const aiPlayer = () => {
+          const aiPlayer = () => {
                 if (isGameActive && playersSelect.value === 'ai' && currentPlayer === 'O') {
                     const emptyTiles = tiles.filter(tile => tile.innerText === '');
-                    const randomIndex = Math.floor(Math.random() * emptyTiles.length);
-                    const selectedTile = emptyTiles[randomIndex];
+                    const selectedTile = getAIDecision(emptyTiles);
 
                     if (selectedTile) {
-                        let shouldWin = false;
-
-                        switch (categorySelect.value) {
-                            case 'easy':
-                                // 90% chance for the player to win
-                                shouldWin = Math.random() < 0.9;
-                                break;
-                            case 'hard':
-                                // 50% chance for the player to win
-                                shouldWin = Math.random() < 0.5;
-                                break;
-                            case 'expert':
-                                // 10% chance for the player to win
-                                shouldWin = Math.random() < 0.1;
-                                break;
-                            default:
-                                shouldWin = false;
-                        }
-
-                        if (shouldWin) {
-                            // Mimic a move that leads to a win
-                            userAction(selectedTile, tiles.indexOf(selectedTile));
-                        } else {
-                            // Choose a random empty tile as usual
-                            userAction(selectedTile, tiles.indexOf(selectedTile));
-                        }
+                        userAction(selectedTile, tiles.indexOf(selectedTile));
                     }
                 }
             };
+
+            const getAIDecision = (emptyTiles) => {
+                switch (categorySelect.value) {
+                    case 'easy':
+                        // Easy mode: The player can easily win
+                        return getRandomEmptyTile(emptyTiles);
+                    case 'hard':
+                        // Hard mode: The player has a 30% chance to win
+                        return Math.random() < 0.7 ? getRandomEmptyTile(emptyTiles) : getWinningMove(emptyTiles);
+                    case 'expert':
+                        // Expert mode: The player is impossible to win
+                        return getWinningMove(emptyTiles);
+                    default:
+                        return getRandomEmptyTile(emptyTiles);
+                }
+            };
+
+            const getRandomEmptyTile = (emptyTiles) => {
+                // Choose a random empty tile
+                const randomIndex = Math.floor(Math.random() * emptyTiles.length);
+                return emptyTiles[randomIndex];
+            };
+
+            const getWinningMove = (emptyTiles) => {
+                // Check each empty tile for a winning move
+                for (const tile of emptyTiles) {
+                    const index = tiles.indexOf(tile);
+                    const originalContent = tile.innerText;
+
+                    // Simulate making a move on this tile
+                    tile.innerText = currentPlayer;
+                    const isWinningMove = checkForWin(index);
+
+                    // Restore the original content
+                    tile.innerText = originalContent;
+
+                    if (isWinningMove) {
+                        return tile;
+                    }
+                }
+
+                // If no winning move is found, return a random empty tile
+                return getRandomEmptyTile(emptyTiles);
+            };
+
+            const checkForWin = (index) => {
+        const row = Math.floor(index / 6);
+        const col = index % 6;
+
+        // Check row
+        if (checkRow(row)) {
+            return true;
+        }
+
+        // Check column
+        if (checkColumn(col)) {
+            return true;
+        }
+
+        // Check diagonals
+        if (checkDiagonals()) {
+            return true;
+        }
+
+        return false;
+    };
+
+    const checkRow = (row) => {
+        const startIndex = row * 6;
+        const cells = tiles.slice(startIndex, startIndex + 6);
+        return cells.every(cell => cell.innerText === currentPlayer);
+    };
+
+    const checkColumn = (col) => {
+        const cells = [];
+        for (let i = 0; i < 5; i++) {
+            cells.push(tiles[i * 6 + col]);
+        }
+        return cells.every(cell => cell.innerText === currentPlayer);
+    };
+
+    const checkDiagonals = () => {
+        // Check top-left to bottom-right diagonal
+        const diagonal1 = [0, 7, 14, 21, 28];
+        if (checkCells(diagonal1)) {
+            return true;
+        }
+
+        // Check top-right to bottom-left diagonal
+        const diagonal2 = [5, 10, 15, 20, 25];
+        if (checkCells(diagonal2)) {
+            return true;
+        }
+
+        return false;
+    };
+
+    const checkCells = (cellIndices) => {
+        const cells = cellIndices.map(index => tiles[index]);
+        return cells.every(cell => cell.innerText === currentPlayer);
+    };
             
     setInterval(aiPlayer, 10);
 });
