@@ -4,7 +4,7 @@
     font-family: 'Itim', cursive;
 }
 
-body, html {
+body {
     background-image: linear-gradient(45deg, #7b2323, #030202);
     display: flex;
     justify-content: center;
